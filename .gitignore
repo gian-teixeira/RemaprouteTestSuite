@@ -1,0 +1,5 @@
+out
+src/__pycache__
+src/env
+test
+exec.sh

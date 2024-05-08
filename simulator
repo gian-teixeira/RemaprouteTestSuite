@@ -1,0 +1,12 @@
+#!/bin/bash
+case $1 in
+    simulate)
+        python3 src/simulate.py ${@:2} 
+        ;;
+    stats)
+        python3 src/stats.py 
+        ;;
+    help | *) 
+        python3 src/simulate.py -h
+        ;;
+esac
