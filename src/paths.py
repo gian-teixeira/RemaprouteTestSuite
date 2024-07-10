@@ -31,6 +31,7 @@ class Sample(list):
         self.old_route = old_route
         self.new_route = new_route
         self.lczs = self.find_remap_zones(old_route,new_route)
+        
 
     @staticmethod
     def find_remap_zones(old_route, new_route):
@@ -109,6 +110,12 @@ class PathManager:
             content = open(f"{folder}/{path_file}", "r")
             for line in content:
                 route = PathManager.build_route(line)
+                
+                src_hopstr = Hop.STARSTR.split(':')
+                src_hopstr[0] = str(route.src)
+                src_hopstr = ':'.join(src_hopstr)
+                route.hops.insert(0,Hop(0,src_hopstr))
+
                 if route.dst in route:
                     routes.append(route)
             content.close()

@@ -1,5 +1,6 @@
 # Pip libs
 from tqdm import tqdm
+from collections import defaultdict
 import os
 
 # Local libs
@@ -7,6 +8,10 @@ from remapper import *
 import arg_parser
 import tables
 from paths import PathManager
+
+def print_route(route):
+    base = str(route)
+    print(base.split()[-1].replace('|', '\n'))
 
 # Data and config
 args = arg_parser.get_args()
@@ -17,34 +22,53 @@ Remapper.config('/home/giancarlo/remaprt/src/remaproute',
                 iface = args.iface,
                 log = args.log_file)
 
+status_count = defaultdict(lambda : 0)
+
 # Proccess
 if __name__ == "__main__":
-    for sample_id, sample in tqdm(enumerate(samples),
-                                  total = len(samples),
-                                  desc = "Sample "):
+    for sample_id, sample in enumerate(samples):
         twist = False
         zone_id = 0
 
         for is_real,zone in sample.lczs:
             for pos in range(zone.i2+is_real, zone.j2):
-                result = Remapper.remap(sample, pos+1)
+                cmd,output,result = Remapper.remap(sample, pos+1)
+
+                status_count[Remapper.status] += 1
 
                 if Remapper.status == Remapper.Status.ERROR:
+                    log.write("Remap error\n")
                     log.write(Remapper.data + "\n\n")
                     continue
                 
-                data = Remapper.output.split()
+                if Remapper.status == Remapper.Status.DIFFERENT:
+                    log.write("Unexpected result\n")
+                    log.write(Remapper.data + "\n\n")
+                    log.write("EXPECTED", Remapper.expected_solution(sample, pos+1))
+                    log.write("GIVEN", result)
+                    continue
+
+                print("OK :", status_count[Remapper.Status.OK_SINGLE] + 
+                              status_count[Remapper.Status.OK_MULTIPLE],
+                      "WRONG :", status_count[Remapper.Status.DIFFERENT] +
+                                 status_count[Remapper.Status.ERROR])
                 
+                data = Remapper.output.split()
+
                 if sample.old_route.metadata.nprobes < int(data[0]):
-                    print(Remapper.data)
+                    log.write("So much probes\n")
+                    log.write(Remapper.data + "\n\n")
+                    log.write(sample.old_route.metadata.nprobes, int(data[0]))
+                    continue
                 
                 tables.add_row('detection', [sample_id, zone_id,
                                              pos+1, int(data[-1]), int(data[0]),
                                              sample.old_route.metadata.nprobes,
-                                             Remapper.status == Remapper.status.OK_MULTIPLE,
+                                             Remapper.status == Remapper.Status.OK_MULTIPLE,
                                              Remapper.status == Remapper.Status.UNRESPONSIVE, 
                                              (data[-1] == '1'),
                                              Remapper.status == Remapper.Status.NO_REMAP])
+                
                 assert int(data[-1]) > 0
                 
             if is_real:
@@ -74,5 +98,6 @@ if __name__ == "__main__":
     try: os.mkdir('out/tables')
     except: pass
     finally:
-        #tables.save('out/tables')
+        print(status_count)
+        tables.save('out/tables')
         log.close()

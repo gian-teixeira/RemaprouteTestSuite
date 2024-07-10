@@ -59,7 +59,7 @@ class Remapper:
                 zip(cmd[0::2], cmd[1::2])
             ))
 
-        return result
+        return cmd,output,result
     
     @staticmethod
     def expected_solution(sample : PathManager.Sample,
@@ -82,7 +82,7 @@ class Remapper:
             for real,lcz in sample.lczs:
                 if not real: continue
                 if (i := i+1) > 1: status = Remapper.Status.OK_MULTIPLE
-                if lcz.i2 > ttl: break
+                if lcz.i2 >= ttl: break
                 last_lcz = lcz
 
             expected = new_hops[:last_lcz.j2+1] + old_hops[last_lcz.j1+1:]
@@ -98,11 +98,22 @@ class Remapper:
         expected, status = cls.expected_solution(cls.sample, cls.ttl)
         equal : bool = True
 
-        for i in range(len(expected)):
-            if len(cls.result) != len(expected) or \
-               not Hop.equal(cls.result.hops[i], expected[i], ALL_DIFFERENCE_OPTIONS):
-                equal = False
-                break
+        print('validate', cls.ttl)
+        for hop in expected:
+            print(hop, end = ' ')
+        print()
+
+        if len(cls.result) != len(expected):
+            equal = False
+        else:
+            for i in range(len(expected)):
+                if not Hop.equal(cls.result.hops[i], expected[i], 
+                             frozenset([RouteDifferenceOption.IGNORE_BALANCERS])):
+                    equal = False
+                    print(cls.result.hops[i], expected[i])
+                    break
+        
+        print()
         
         if not equal: cls.status = Remapper.Status.DIFFERENT
         else: cls.status = status

@@ -389,6 +389,7 @@ class Hop:
 
     @staticmethod
     def equal(h1, h2, options):
+        #print(h1, h2)
         if RouteDifferenceOption.IGNORE_BALANCERS in options:
             return h1.ifset.intersection(h2.ifset)
         return h1.ifaces == h2.ifaces

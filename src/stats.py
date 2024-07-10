@@ -26,6 +26,12 @@ first_lcz_len = mult_lcz_samples[mult_lcz_samples['zone_id'] == 0]['new_len'].va
 all_lczs_len = mult_lcz_samples.groupby('sample_id')['new_len'].sum().values
 probing_cost_saving = detection['probing_cost_local'] / detection['probing_cost_complete']
 
+def savings(df):
+    rates = ((df['probing_cost_complete']
+        - df['probing_cost_local'])
+        / df['probing_cost_complete'])
+    return rates[rates >= 0]
+
 output = pd.DataFrame.from_dict({
     'info': [
         '3 more hops measured',
@@ -40,7 +46,8 @@ output = pd.DataFrame.from_dict({
     'value': (np.array([
         (detection['measures'] >= 3).sum() / len(detection),
         len(zone[zone['new_len'] < 2]) / len(zone),
-        (probing_cost_saving < 0.5).sum() / len(probing_cost_saving),
+        (savings(detection) > 0.5).sum() / len(savings(detection)),
+        #(probing_cost_saving < 0.5).sum() / len(probing_cost_saving),
         (1 - probing_cost_saving).mean(),
         1 - len(mult_lcz_sample_ids) / len(zone.groupby('sample_id').min()),
         detection[detection['sample_id'].isin(mult_lcz_sample_ids)]['multiple_remap'].sum() \
@@ -63,11 +70,6 @@ long_samples = set(sample[sample['new_path_len'] > 20]['sample_id'])
 short_detections = detection[detection['sample_id'].map(lambda id : id in short_samples)]
 long_detections = detection[detection['sample_id'].map(lambda id : id in long_samples)]
 
-def savings(df):
-    rates = ((df['probing_cost_complete']
-        - df['probing_cost_local'])
-        / df['probing_cost_complete'])
-    return rates[rates >= 0]
 
 plot_data = [
     {
