@@ -32,7 +32,6 @@ class Sample(list):
         self.new_route = new_route
         self.lczs = self.find_remap_zones(old_route,new_route)
         
-
     @staticmethod
     def find_remap_zones(old_route, new_route):
         '''
@@ -56,6 +55,9 @@ class Sample(list):
         return remap_zones
 
 class PathManager:
+    multiple_change_zone = 0
+    info = defaultdict(lambda : 0)
+
     class Sample:
         def __init__(self, old_route, new_route):
             self.old_route = old_route
@@ -64,15 +66,11 @@ class PathManager:
     @staticmethod
     def hop_in_route(hop : Hop,
                      route : Route) -> int:
-        '''
-            Returns the index of hop in route or -1 if the 
-            hop is not present.
-        '''
         for i in range(len(route)):
             if PathManager.hop_equal(hop, route[i]):
                 return i
         return -1
-
+    
     @staticmethod
     def hopstr(route : Route,
                add_src : bool = False) -> str:
@@ -90,6 +88,7 @@ class PathManager:
         return route
     
     @staticmethod
+
     def hop_equal(a : Hop,
                   b : Hop):
         a_ifset = set([iface.ip for iface in a])
@@ -118,6 +117,10 @@ class PathManager:
 
                 if route.dst in route:
                     routes.append(route)
+                    PathManager.info["has dst"] += 1
+                else:
+                    PathManager.info["no dst"] += 1
+
             content.close()
         
         # Grouping routes by source and destination

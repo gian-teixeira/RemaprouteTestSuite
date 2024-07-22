@@ -6,6 +6,8 @@ import pandas as pd
 import numpy as np
 import os
 
+import extern
+
 def show(text : str, value : float):
     print(text, ": %.2f" % (value*100))
 
@@ -65,11 +67,15 @@ print('\n'+tabulate(
     tablefmt = 'github'
 )+'\n')
 
-short_samples = set(sample[sample['new_path_len'] < 20]['sample_id'])
+# 0 hops
+
+short_samples = set(sample[sample['new_path_len'] < 10]['sample_id'])
 long_samples = set(sample[sample['new_path_len'] > 20]['sample_id'])
 short_detections = detection[detection['sample_id'].map(lambda id : id in short_samples)]
 long_detections = detection[detection['sample_id'].map(lambda id : id in long_samples)]
 
+tmp = zone['sample_id'].apply(lambda id : sample.iloc[id]['new_path_len'])
+#print(tmp)
 
 plot_data = [
     {
@@ -79,6 +85,7 @@ plot_data = [
             (savings(long_detections), 'Long paths'),
             (savings(detection), 'All paths')
         ],
+        'title': '...',
     },
     {
         'filename': 'probing_cost_local',
@@ -87,6 +94,7 @@ plot_data = [
             (detection.groupby('sample_id')['probing_cost_local'].max(), 'Max'),
             (detection.groupby('sample_id')['probing_cost_local'].mean(), 'Mean'),
         ],
+        'title': '...',
     },
     {
         'filename': 'probing_cost_compare',
@@ -94,6 +102,7 @@ plot_data = [
             (detection['probing_cost_local'], 'Probing cost local'),
             (detection['probing_cost_complete'], 'Probing cost complete')
         ],
+        'title': '...',
     },
     {
         'filename': 'hops_measured',
@@ -103,29 +112,65 @@ plot_data = [
                 lambda row : sample.iloc[row['sample_id']]['new_path_len'], axis = 1), 
                 'Complete')   
         ],
+        'title': '...',
     },
     {
         'filename': 'added_hops',
         'plots': [
             (zone['new_len'], 'Added hops')  
         ],
+        'title': '...',
+    },
+    {
+        'filename': 'added_hops_frac',
+        'plots': [
+            (zone['new_len'] / zone['sample_id']
+                .apply(lambda id : sample.iloc[id]['new_path_len']),
+                'Fraction of added hops')
+        ],
+        'title': '...',
     },
     {
         'filename': 'change_zones',
         'plots': [
             (zone.groupby('sample_id').size(), 'Number of local change zones')  
         ],
+        'title': '...',
     }
 ]
-print(zone.groupby('sample_id').size().unique())
+
+import scratch
+import plot
 
 for data in plot_data:
     figure, axes = plt.subplots(figsize = (8,8))
     legend_lines = []
     legend_labels = []
     cmap = plt.cm.coolwarm
+
+    points = []
     
     for i, (series, label) in enumerate(data['plots']):
+        cdf = scratch.gen_cdf_list(list(series))
+        x = [0]
+        y = [0]
+        for a,b in cdf:
+            x.append(a)
+            y.append(b)
+        points.append(("step", x, y, plot.colors[i], label))
+
+    filename = data['filename']
+
+    plot.plot_graph(points,
+        xlabel = data['title'],
+        ylabel = "Cumulative fraction of changes",
+        filename = f'out/graphs/{filename}.pdf',
+        loc = 4)
+
+
+'''
+        print(cdf)
+
         color = cmap(i / len(data['plots']))
         series.hist(density = True,
                     bins = series.unique().sort(),
@@ -164,3 +209,4 @@ for data in plot_data:
     try: os.mkdir('out/graphs')
     except: pass
     finally: figure.savefig(f'out/graphs/{filename}.png')
+'''

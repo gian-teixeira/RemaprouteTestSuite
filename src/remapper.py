@@ -45,14 +45,13 @@ class Remapper:
 
         try: 
             result = PathManager.build_route(output.split()[0:5])
+        except Exception as exception:
+            cls.status = Remapper.Status.ERROR
+        else: 
             cmd += ["OUTPUT :", str(result)]
             cls.result = result
             cls.output = output
-        except Exception as exception: 
-            #print("OUTPUT Error :", exception)
-            #print(output)
-            cls.status = Remapper.Status.ERROR
-        else: cls.validate_result()
+            cls.validate_result()
         finally:
             cls.data = '\n'.join(map(
                 lambda p : f"{p[0]} '{p[1]}'",
@@ -70,6 +69,9 @@ class Remapper:
         status = Remapper.Status.OK_SINGLE
 
         ttl -= 1
+
+        while ttl < len(sample.new_route) and ttl >= 0 and sample.new_route[ttl].star():
+            ttl -= 1
 
         # No remap to do
         if ttl < len(sample.new_route) and ttl < len(sample.old_route) \
@@ -98,11 +100,6 @@ class Remapper:
         expected, status = cls.expected_solution(cls.sample, cls.ttl)
         equal : bool = True
 
-        print('validate', cls.ttl)
-        for hop in expected:
-            print(hop, end = ' ')
-        print()
-
         if len(cls.result) != len(expected):
             equal = False
         else:
@@ -110,10 +107,7 @@ class Remapper:
                 if not Hop.equal(cls.result.hops[i], expected[i], 
                              frozenset([RouteDifferenceOption.IGNORE_BALANCERS])):
                     equal = False
-                    print(cls.result.hops[i], expected[i])
                     break
-        
-        print()
         
         if not equal: cls.status = Remapper.Status.DIFFERENT
         else: cls.status = status
