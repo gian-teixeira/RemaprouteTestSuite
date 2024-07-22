@@ -71,11 +71,11 @@ if __name__ == "__main__":
                         continue
                     
                     tables.add_row('detection', [sample_id, zone_id,
-                                                 pos+1, int(data[-1]), int(data[0]),
+                                                 pos+1, int(data[-2]), int(data[0]),
                                                  sample.old_route.metadata.nprobes,
+                                                 float(data[-1]),
                                                  Remapper.status == Remapper.Status.OK_MULTIPLE,
                                                  Remapper.status == Remapper.Status.UNRESPONSIVE, 
-                                                 (data[-1] == '1'),
                                                  Remapper.status == Remapper.Status.NO_REMAP])
                     
                     #assert int(data[-1]) > 0

@@ -16,8 +16,6 @@ sample = pd.read_csv(f'{src}/sample.csv')
 detection = pd.read_csv(f'{src}/detection.csv')
 zone = pd.read_csv(f'{src}/zone.csv')
 
-print(detection['measures'].unique())
-
 # TABLE
 
 sample_lcz_count = zone.groupby('sample_id').size()
@@ -74,9 +72,6 @@ long_samples = set(sample[sample['new_path_len'] > 20]['sample_id'])
 short_detections = detection[detection['sample_id'].map(lambda id : id in short_samples)]
 long_detections = detection[detection['sample_id'].map(lambda id : id in long_samples)]
 
-tmp = zone['sample_id'].apply(lambda id : sample.iloc[id]['new_path_len'])
-#print(tmp)
-
 plot_data = [
     {
         'filename': 'probing_cost_savings',
@@ -85,16 +80,18 @@ plot_data = [
             (savings(long_detections), 'Long paths'),
             (savings(detection), 'All paths')
         ],
-        'title': '...',
+        'title': 'Probing Cost Savings (%)',
+        'loc': 2,
     },
     {
         'filename': 'probing_cost_local',
         'plots': [
-            (detection.groupby('sample_id')['probing_cost_local'].min(), 'Min'),
-            (detection.groupby('sample_id')['probing_cost_local'].max(), 'Max'),
-            (detection.groupby('sample_id')['probing_cost_local'].mean(), 'Mean'),
+            (detection.groupby('sample_id')['probing_cost_local'].min(), 'Minimum'),
+            (detection.groupby('sample_id')['probing_cost_local'].max(), 'Maximum'),
+            (detection.groupby('sample_id')['probing_cost_local'].mean(), 'Average'),
         ],
-        'title': '...',
+        'title': 'Probing Cost',
+        'loc': 4,
     },
     {
         'filename': 'probing_cost_compare',
@@ -102,7 +99,8 @@ plot_data = [
             (detection['probing_cost_local'], 'Probing cost local'),
             (detection['probing_cost_complete'], 'Probing cost complete')
         ],
-        'title': '...',
+        'title': 'Probing Cost',
+        'loc': 4,
     },
     {
         'filename': 'hops_measured',
@@ -112,14 +110,16 @@ plot_data = [
                 lambda row : sample.iloc[row['sample_id']]['new_path_len'], axis = 1), 
                 'Complete')   
         ],
-        'title': '...',
+        'title': 'Number of Hops Measured',
+        'loc': 4,
     },
     {
         'filename': 'added_hops',
         'plots': [
             (zone['new_len'], 'Added hops')  
         ],
-        'title': '...',
+        'title': 'Number of added hops',
+        'loc': 4,
     },
     {
         'filename': 'added_hops_frac',
@@ -128,14 +128,16 @@ plot_data = [
                 .apply(lambda id : sample.iloc[id]['new_path_len']),
                 'Fraction of added hops')
         ],
-        'title': '...',
+        'title': 'Fraction of Added Hops\n(relative no new path length)',
+        'loc': 4,
     },
     {
         'filename': 'change_zones',
         'plots': [
             (zone.groupby('sample_id').size(), 'Number of local change zones')  
         ],
-        'title': '...',
+        'title': 'Number of Local Change Zones',
+        'loc': 4,
     }
 ]
 
@@ -165,7 +167,7 @@ for data in plot_data:
         xlabel = data['title'],
         ylabel = "Cumulative fraction of changes",
         filename = f'out/graphs/{filename}.pdf',
-        loc = 4)
+        loc = data['loc'])
 
 
 '''

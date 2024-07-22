@@ -82,7 +82,7 @@ class Route:
         DEST_UNREACHABLE = "dest_unreachable"
         HAD_LOOP = "had_loop"
 
-    def __init__(self, line, initial_ttl=0, end_ttl= 100, ignore_prefixes=[]):
+    def __init__(self, line, initial_ttl=0, end_ttl= 100, ignore_prefixes=[], latency = 0):
         self.line = line
         self.metadata = RouteMetadata()
         fields = line.split()
@@ -96,6 +96,7 @@ class Route:
         self.flags = set()
         self.hops = list()
         self.ip2iface = dict()
+        self.latency = latency
         i = 0
         for hopstr in hopsstr.split("|")[initial_ttl:end_ttl]:
             self[i] = Hop(i, hopstr)
